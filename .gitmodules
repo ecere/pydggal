@@ -1,0 +1,3 @@
+[submodule "dggal"]
+	path = dggal
+	url = https://github.com/ecere/dggal

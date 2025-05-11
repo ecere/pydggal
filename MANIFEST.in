@@ -1,0 +1,10 @@
+global-exclude *
+recursive-include dggal *
+recursive-exclude dggal obj/**
+recursive-exclude dggal *.o**
+recursive-exclude dggal *.so**
+recursive-exclude dggal images/*
+recursive-exclude dggal dggal.org/*
+recursive-exclude dggal .git**
+include setup.py
+include README.md
