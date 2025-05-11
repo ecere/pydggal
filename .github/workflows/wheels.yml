@@ -1,0 +1,41 @@
+name: Build
+
+on: [push, pull_request]
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-latest]
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Used to host cibuildwheel
+      - uses: actions/setup-python@v5
+
+      - name: Initialize submodules
+        run: git submodule update --init --recursive
+
+      - name: Install cibuildwheel
+        run: python3 -m pip install cibuildwheel==2.23.3
+
+      - name: Build wheels
+        run: python3 -m cibuildwheel --output-dir wheelhouse
+        env:
+            CIBW_ENVIRONMENT: 'PIP_FIND_LINKS="https://test.pypi.org/simple/ecrt https://test.pypi.org/simple/ecdev"'
+            CIBW_SKIP: "cp36-* cp37-* *-musllinux*"
+            # Skip libecrt.so as it is in ecrt package -- this package's RPATHs reference it there at ecrt/lib/
+            CIBW_REPAIR_WHEEL_COMMAND: 'auditwheel repair -w {dest_dir} {wheel} --exclude libecrt.so'
+
+        #   CIBW_SOME_OPTION: value
+        #   CIBW_BEFORE_BUILD: |
+        #       python3 -c "print('setuptools version:', setuptools.__version__)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl
