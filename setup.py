@@ -72,6 +72,7 @@ def build_package():
             (os.path.join(dggal_py_dir, 'dggal.py'), 'dggal.py'),
             (os.path.join(dggal_py_dir, '__init__.py'), '__init__.py'),
             (os.path.join(dggal_dir, 'obj', 'release.' + platform_str, 'dgg' + exe_ext), os.path.join('bin', 'dgg' + exe_ext)),
+            (os.path.join(os.path.dirname(__file__), 'dgg_wrapper.py'), os.path.join('bin', 'dgg_wrapper.py')),
          ], artifacts_dir)
    except subprocess.CalledProcessError as e:
       print(f"Error during make: {e}")
@@ -106,7 +107,7 @@ if 'sdist' in commands:
 else:
    packages=['dggal', 'dggal.lib', 'dggal.bin']
    package_dir={'dggal': artifacts_dir, 'dggal.bin': os.path.join(artifacts_dir, 'bin')}
-   package_data={'dggal': [ 'dggal.py' ], 'dggal.bin': ['dgg' + exe_ext]}
+   package_data={'dggal': [ 'dggal.py' ], 'dggal.bin': ['dgg' + exe_ext, 'dgg_wrapper.py']}
    if platform_str != 'win32':
       package_dir['dggal.lib'] =  os.path.join(artifacts_dir, 'lib')
       package_data['dggal.lib'] = lib_files
@@ -128,4 +129,5 @@ setup(
     include_package_data=True,
     ext_modules=[],
     cmdclass=cmdclass,
+    entry_points={ 'console_scripts': [ 'dgg=dggal.bin.dgg_wrapper:main' ] }
 )

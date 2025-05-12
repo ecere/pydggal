@@ -8,3 +8,4 @@ recursive-exclude dggal dggal.org/*
 recursive-exclude dggal .git**
 include setup.py
 include README.md
+include dgg_wrapper.py
