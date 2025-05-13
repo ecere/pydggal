@@ -6,6 +6,7 @@ recursive-exclude dggal *.so**
 recursive-exclude dggal images/*
 recursive-exclude dggal dggal.org/*
 recursive-exclude dggal .git**
+recursive-exclude dggal *.geojson**
 include setup.py
 include README.md
 include dgg_wrapper.py

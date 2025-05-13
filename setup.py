@@ -161,6 +161,11 @@ def build_package():
             (os.path.join(dggal_py_dir, '__init__.py'), '__init__.py'),
             (os.path.join(dggal_dir, 'obj', 'release.' + platform_str, 'dgg' + exe_ext), os.path.join('bin', 'dgg' + exe_ext)),
             (os.path.join(os.path.dirname(__file__), 'dgg_wrapper.py'), os.path.join('bin', 'dgg_wrapper.py')),
+            (os.path.join(dggal_dir, 'bindings_examples', 'py', 'geom.py'), os.path.join('examples', 'geom.py')),
+            (os.path.join(dggal_dir, 'bindings_examples', 'py', 'info.py'), os.path.join('examples', 'info.py')),
+            (os.path.join(dggal_dir, 'bindings_examples', 'py', 'togeo.py'), os.path.join('examples', 'togeo.py')),
+            (os.path.join(dggal_dir, 'bindings_examples', 'py', 'togeo_json.py'), os.path.join('examples', 'togeo_json.py')),
+            (os.path.join(dggal_dir, 'bindings_examples', 'py', 'togeo_text.py'), os.path.join('examples', 'togeo_text.py')),
          ], artifacts_dir)
    except subprocess.CalledProcessError as e:
       print(f"Error during make: {e}")
@@ -194,16 +199,18 @@ if 'sdist' in commands:
    cmdclass = {}
    cffi_modules = []
 else:
-   packages=['dggal', 'dggal.lib', 'dggal.bin']
+   packages=['dggal', 'dggal.lib', 'dggal.bin', 'dggal.examples']
    package_dir={
       'dggal': artifacts_dir,
       'dggal.bin': os.path.join(artifacts_dir, 'bin'),
-      'dggal.lib': os.path.join(artifacts_dir, 'lib')
+      'dggal.lib': os.path.join(artifacts_dir, 'lib'),
+      'dggal.examples': os.path.join(artifacts_dir, 'examples'),
    }
    package_data={
       'dggal': [ 'dggal.py' ],
       'dggal.bin': ['dgg' + exe_ext, 'dgg_wrapper.py'],
-      'dggal.lib': ['libdggalStatic.a']
+      'dggal.lib': ['libdggalStatic.a'],
+      'dggal.examples': ['geom.py', 'info.py', 'list.py', 'togeo.py', 'togeo_json.py', 'togeo_text.py'],
    }
    if platform_str == 'win32':
       package_data['dggal.bin'].append(dll_prefix + 'dggal' + dll_ext)
