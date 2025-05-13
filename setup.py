@@ -8,7 +8,88 @@ import sys
 import shutil
 import sysconfig
 import pkg_resources
+import platform
+import distutils.ccompiler
+from distutils.command.build_ext import build_ext
+#from wheel.bdist_wheel import bdist_wheel
 from os import path
+
+pkg_version       = '0.0.1'
+
+env = os.environ.copy()
+
+cc_override = None
+
+# print("sys.platform is: ", sys.platform)
+
+if sys.platform.startswith('win'):
+
+   # NOTE: PyPy builds are failing due to a .def file containing a PyInit_ symbol which is specific to CPython
+   # See generated build/temp.win-amd64-pypy38/Release/build/temp.win-amd64-pypy38/release/_pyecrt.pypy38-pp73-win_amd64.def
+   # and https://github.com/python-cffi/cffi/issues/170
+
+   # This approach works with Python 3.8
+   def get_mingw(plat=None):
+       return 'mingw32'
+
+   distutils.ccompiler.get_default_compiler = get_mingw
+
+   # This approach works with Python 3.9+
+   class CustomBuildExt(build_ext):
+      def initialize_options(self):
+         super().initialize_options()
+         self.compiler = 'mingw32'
+
+   def get_gcc_target():
+       try:
+           output = subprocess.check_output(['gcc', '-dumpmachine'], universal_newlines=True)
+           return output.strip()
+       except Exception:
+           return None
+
+   def check_gcc_multilib():
+       try:
+           output = subprocess.check_output(['gcc', '-v'], stderr=subprocess.STDOUT, universal_newlines=True)
+           return '--enable-multilib' in output
+       except Exception:
+           return False
+
+   def is_gcc_good_for(archBits):
+       target = get_gcc_target()
+       if target is None:
+           return True
+       supports_multilib = check_gcc_multilib()
+
+       if target.startswith('x86_64'):
+           return archBits == 64
+       elif target.startswith('i686') or target.startswith('i386'):
+           return archBits == 32
+       else:
+           return True # Unknown
+
+   def check_i686_w64_available():
+       try:
+           result = subprocess.run(
+               ['i686-w64-mingw32-gcc', '--version'],
+               stdout=subprocess.PIPE,
+               stderr=subprocess.PIPE,
+               check=True,
+               universal_newlines=True
+           )
+           return True
+       except (subprocess.CalledProcessError, FileNotFoundError):
+           return False
+
+   if platform.architecture()[0] == '64bit':
+      # Ensure ProgramFiles(x86) is set
+      if 'ProgramFiles(x86)' not in env:
+         env['ProgramFiles(x86)'] = r"C:\Program Files (x86)"
+   else:
+      if 'ProgramFiles(x86)' in env:
+         del os.environ['ProgramFiles(x86)']
+      if is_gcc_good_for(32) == False:
+         if check_i686_w64_available():
+            cc_override = ['GCC_PREFIX=i686-w64-mingw32-']
 
 dir = os.path.dirname(__file__)
 if dir == '':
@@ -17,8 +98,6 @@ else:
    rwd = os.path.abspath(dir)
 with open(os.path.join(rwd, 'README.md'), encoding='u8') as f:
    long_description = f.read()
-
-pkg_version       = '0.0.1'
 
 cpu_count = multiprocessing.cpu_count()
 dggal_dir = os.path.join(os.path.dirname(__file__), 'dggal')
@@ -59,16 +138,25 @@ def build_package():
    try:
       ecdev_location = os.path.join(pkg_resources.get_distribution("ecdev").location, 'ecdev')
       sdkOption = 'EC_SDK_SRC=' + ecdev_location
-      binsOption = 'EC_BINS=' + os.path.join(ecdev_location, 'bin', '')
-      ldFlags = 'LDFLAGS=-L' + os.path.join(ecdev_location, dll_dir, '')
-      env = os.environ.copy()
+
+      binsPath = os.path.join(ecdev_location, 'bin', '')
+      libsPath = os.path.join(ecdev_location, dll_dir, '')
+      if platform_str == 'win32':
+         binsPath = binsPath.replace(os.sep, '/') # crossplatform.mk expects POSIX paths
+         libsPath = libsPath.replace(os.sep, '/')
+      binsOption = 'EC_BINS=' + binsPath
+      ldFlags = 'LDFLAGS=-L' + libsPath
       set_library_path(env, os.path.join(ecdev_location, 'lib'))
       if not os.path.exists(artifacts_dir):
-         subprocess.check_call([make_cmd, f'-j{cpu_count}', 'SKIP_SONAME=y', 'ENABLE_PYTHON_RPATHS=y', 'DISABLED_STATIC_BUILDS=y', sdkOption, binsOption, ldFlags], env=env, cwd=dggal_dir)
-         #subprocess.check_call([make_cmd, f'-j{cpu_count}', 'SKIP_SONAME=y', 'ENABLE_PYTHON_RPATHS=y',  'DISABLED_STATIC_BUILDS=y', sdkOption, binsOption, ldFlags], env=env, cwd=dggal_c_dir)
+         make_and_args = [make_cmd, f'-j{cpu_count}', 'SKIP_SONAME=y', 'ENABLE_PYTHON_RPATHS=y', 'DISABLED_STATIC_BUILDS=y', sdkOption, binsOption, ldFlags]
+         if cc_override is not None:
+            make_and_args.extend(cc_override)
+         subprocess.check_call(make_and_args, env=env, cwd=dggal_dir)
+         #subprocess.check_call([make_cmd, f'-j{cpu_count}', 'SKIP_SONAME=y', 'ENABLE_PYTHON_RPATHS=y', 'DISABLED_STATIC_BUILDS=y', sdkOption, binsOption, ldFlags], env=env, cwd=dggal_c_dir)
          prepare_package_dir([
             (os.path.join(lib_dir, dll_prefix + 'dggal' + dll_ext), os.path.join(dll_dir, dll_prefix + 'dggal' + dll_ext)),
             #(os.path.join(lib_dir, dll_prefix + 'dggal_c' + dll_ext), os.path.join(dll_dir, dll_prefix + 'dggal_c' + dll_ext)),
+            (os.path.join(dggal_dir, 'obj', 'static.' + platform_str, 'libdggalStatic.a'), os.path.join('lib', 'libdggalStatic.a')),
             (os.path.join(dggal_py_dir, 'dggal.py'), 'dggal.py'),
             (os.path.join(dggal_py_dir, '__init__.py'), '__init__.py'),
             (os.path.join(dggal_dir, 'obj', 'release.' + platform_str, 'dgg' + exe_ext), os.path.join('bin', 'dgg' + exe_ext)),
@@ -98,23 +186,34 @@ lib_files = [
 ]
 
 commands = set(sys.argv)
+
 if 'sdist' in commands:
    packages=['dggal']
    package_dir = { 'dggal': 'dggal' }
    package_data = {'dggal': [] }
    cmdclass = {}
-   cffi_modules=[]
+   cffi_modules = []
 else:
    packages=['dggal', 'dggal.lib', 'dggal.bin']
-   package_dir={'dggal': artifacts_dir, 'dggal.bin': os.path.join(artifacts_dir, 'bin')}
-   package_data={'dggal': [ 'dggal.py' ], 'dggal.bin': ['dgg' + exe_ext, 'dgg_wrapper.py']}
-   if platform_str != 'win32':
-      package_dir['dggal.lib'] =  os.path.join(artifacts_dir, 'lib')
-      package_data['dggal.lib'] = lib_files
+   package_dir={
+      'dggal': artifacts_dir,
+      'dggal.bin': os.path.join(artifacts_dir, 'bin'),
+      'dggal.lib': os.path.join(artifacts_dir, 'lib')
+   }
+   package_data={
+      'dggal': [ 'dggal.py' ],
+      'dggal.bin': ['dgg' + exe_ext, 'dgg_wrapper.py'],
+      'dggal.lib': ['libdggalStatic.a']
+   }
+   if platform_str == 'win32':
+      package_data['dggal.bin'].append(dll_prefix + 'dggal' + dll_ext)
    else:
-      package_data['dggal.bin'].extent(lib_files)
+      package_data['dggal.lib'].append(dll_prefix + 'dggal' + dll_ext)
 
    cmdclass={'build': build_with_make, 'egg_info': egg_info_with_build }
+   if sys.platform.startswith('win'):
+      cmdclass['build_ext'] = CustomBuildExt
+
    cffi_modules=[os.path.join('dggal', 'bindings', 'py', 'build_dggal.py') + ':ffi_dggal']
 
 setup(
@@ -129,5 +228,7 @@ setup(
     include_package_data=True,
     ext_modules=[],
     cmdclass=cmdclass,
-    entry_points={ 'console_scripts': [ 'dgg=dggal.bin.dgg_wrapper:main' ] }
+    entry_points={ 'console_scripts': [ 'dgg=dggal.bin.dgg_wrapper:main' ] },
+    long_description=long_description,
+    long_description_content_type='text/markdown'
 )
