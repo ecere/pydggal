@@ -10,8 +10,8 @@ jobs:
       matrix:
         # os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-latest]
         # os: [ubuntu-latest]
-        # os: [windows-latest]
-        os: [ubuntu-latest, windows-latest]
+        # os: [windows-2019] #latest]
+        os: [ubuntu-latest, windows-2019]
 
     steps:
       - uses: actions/checkout@v4
