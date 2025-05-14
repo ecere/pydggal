@@ -7,6 +7,12 @@ recursive-exclude dggal images/*
 recursive-exclude dggal dggal.org/*
 recursive-exclude dggal .git**
 recursive-exclude dggal *.geojson**
+recursive-exclude dggal tutorial/**
+recursive-exclude dggal */__pycache__
+recursive-exclude dggal bindings/rust/**
+recursive-exclude dggal bindings/cpp/**
+recursive-exclude dggal bindings/*/*ecrt**
+recursive-exclude dggal bindings/py/_pydggal.c
 include setup.py
 include README.md
 include dgg_wrapper.py
