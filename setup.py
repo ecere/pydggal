@@ -14,7 +14,7 @@ from distutils.command.build_ext import build_ext
 #from wheel.bdist_wheel import bdist_wheel
 from os import path
 
-pkg_version = '0.0.1rc1'
+pkg_version = '0.0.1rc2'
 
 env = os.environ.copy()
 
@@ -156,7 +156,7 @@ def build_package():
          prepare_package_dir([
             (os.path.join(lib_dir, dll_prefix + 'dggal' + dll_ext), os.path.join(dll_dir, dll_prefix + 'dggal' + dll_ext)),
             #(os.path.join(lib_dir, dll_prefix + 'dggal_c' + dll_ext), os.path.join(dll_dir, dll_prefix + 'dggal_c' + dll_ext)),
-            (os.path.join(dggal_dir, 'obj', 'static.' + platform_str, 'libdggalStatic.a'), os.path.join('lib', 'libdggalStatic.a')),
+            #(os.path.join(dggal_dir, 'obj', 'static.' + platform_str, 'libdggalStatic.a'), os.path.join('lib', 'libdggalStatic.a')),
             (os.path.join(dggal_py_dir, 'dggal.py'), 'dggal.py'),
             (os.path.join(dggal_py_dir, '__init__.py'), '__init__.py'),
             (os.path.join(dggal_dir, 'obj', 'release.' + platform_str, 'dgg' + exe_ext), os.path.join('bin', 'dgg' + exe_ext)),
@@ -199,23 +199,24 @@ if 'sdist' in commands:
    cmdclass = {}
    cffi_modules = []
 else:
-   packages=['dggal', 'dggal.lib', 'dggal.bin', 'dggal.examples']
+   packages=['dggal', 'dggal.bin', 'dggal.examples']
    package_dir={
       'dggal': artifacts_dir,
       'dggal.bin': os.path.join(artifacts_dir, 'bin'),
-      'dggal.lib': os.path.join(artifacts_dir, 'lib'),
       'dggal.examples': os.path.join(artifacts_dir, 'examples'),
    }
    package_data={
       'dggal': [ 'dggal.py' ],
       'dggal.bin': ['dgg' + exe_ext, 'dgg_wrapper.py'],
-      'dggal.lib': ['libdggalStatic.a'],
+      #'dggal.lib': ['libdggalStatic.a'],
       'dggal.examples': ['geom.py', 'info.py', 'list.py', 'togeo.py', 'togeo_json.py', 'togeo_text.py'],
    }
    if platform_str == 'win32':
       package_data['dggal.bin'].append(dll_prefix + 'dggal' + dll_ext)
    else:
-      package_data['dggal.lib'].append(dll_prefix + 'dggal' + dll_ext)
+      packages.append('dggal.lib')
+      package_dir['dggal.lib'] = os.path.join(artifacts_dir, 'lib')
+      package_data['dggal.lib'] = [ dll_prefix + 'dggal' + dll_ext ]
 
    cmdclass={'build': build_with_make, 'egg_info': egg_info_with_build }
    if sys.platform.startswith('win'):
@@ -227,8 +228,8 @@ setup(
     name='dggal',
     version=pkg_version,
     cffi_modules=cffi_modules,
-    setup_requires=['ecdev', 'ecrt', 'cffi >= 1.0.0'],
-    install_requires=['ecrt', 'cffi >= 1.0.0'],
+    setup_requires=['setuptools', 'ecdev >= 0.0.1rc1', 'cffi >= 1.0.0'],
+    install_requires=['ecrt >= 0.0.1rc1', 'cffi >= 1.0.0'],
     packages=packages,
     package_dir=package_dir,
     package_data=package_data,
