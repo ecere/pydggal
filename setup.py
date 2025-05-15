@@ -14,7 +14,7 @@ from distutils.command.build_ext import build_ext
 #from wheel.bdist_wheel import bdist_wheel
 from os import path
 
-pkg_version = '0.0.1rc2'
+pkg_version = '0.0.1'
 
 env = os.environ.copy()
 
@@ -228,8 +228,8 @@ setup(
     name='dggal',
     version=pkg_version,
     cffi_modules=cffi_modules,
-    setup_requires=['setuptools', 'ecdev >= 0.0.1rc1', 'cffi >= 1.0.0'],
-    install_requires=['ecrt >= 0.0.1rc1', 'cffi >= 1.0.0'],
+    setup_requires=['setuptools', 'ecdev', 'cffi >= 1.0.0'],
+    install_requires=['ecrt', 'cffi >= 1.0.0'],
     packages=packages,
     package_dir=package_dir,
     package_data=package_data,
