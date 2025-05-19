@@ -24,8 +24,13 @@ DGGAL currently supports all three DGGRS described in [OGC API - DGGS Annex B](h
 * [ISEA9R](https://docs.ogc.org/DRAFTS/21-038r1.html#isea9r-dggrs): An equal area rhombic grid with a refinement ratio of 9 defined in the ISEA projection transformed into a 5x6 Cartesian space resulting in axis-aligned square zones
 * **IVEA3H**: An equal area hexagonal grid with a refinement ratio of 3 defined in the Icosahedral Vertex-oriented Great Circle Equal Area (tentatively called IVEA) projection based on [Slice & Dice (2006)](https://www.tandfonline.com/doi/abs/10.1559/152304006779500687), using the same global indexing and sub-zone ordering as for ISEA3H
 * **IVEA9R**: An equal area rhombic grid with a refinement ratio of 9 defined in the IVEA projection transformed into a 5x6 Cartesian space resulting in axis-aligned square zones, using the same global indexing and sub-zone ordering as for ISEA9R
+* **RTEA3H**: An equal area hexagonal grid with a refinement ratio of 3 defined in the Rhombic Triacontahedron Equal Area (RTEA) projection, a configuration of the Slice & Dice great circle projection equivalent to applying Snyder's projection to the RT, using the same global indexing and sub-zone ordering as for ISEA3H
+* **RTEA9R**: An equal area rhombic grid with a refinement ratio of 9 defined in the RTEA projection transformed into a 5x6 Cartesian space resulting in axis-aligned square zones, using the same global indexing and sub-zone ordering as for ISEA9R
+* [rHEALPix](https://iopscience.iop.org/article/10.1088/1755-1315/34/1/012012): An equal area and axis-aligned grid with square zones topology and a refinement ratio of 9 defined in the rHEALPix projection (using same parameters as default [PROJ implementation](https://proj.org/en/stable/operations/projections/rhealpix.html)) with the original hierarchical indexing and scanline-based sub-zone ordering
 
 ## libDGGAL API Documentation
+
+The API documentation can be [found here](https://dggal.org/docs/html/dggal/Classes/DGGRS.html).
 
 The `DGGRS` class provides most of the functionality of the library, allowing to resolve DGGRS zones by textual ID to a unique 64-bit zone integer identifier (`DGGRSZone`).
 The geometry and sub-zones of a particular zone can also be queried.
@@ -33,7 +38,7 @@ The concept of [sub-zones](https://docs.ogc.org/DRAFTS/21-038r1.html#term-sub-zo
 The DGGAL library also allows to resolve a sub-zone index at a particular depth from a parent zone, allowing to read DGGS-optimized data such as
 [DGGS-JSON](http://dggs-json.org) and [DGGS-JSON-FG](https://docs.ogc.org/DRAFTS/21-038r1.html#rc_data-dggs-jsonfg).
 
-A very early draft of the API documentation can be [found here](https://dggal.org/docs/html/dggal/Classes/DGGRS.html).
+## Language bindings
 
 While the library is written in the [eC programming language](https://ec-lang.org), object-oriented bindings for C, C++ and Python generated using the
 Ecere SDK's [`bgen` tool](https://github.com/ecere/bgen) are provided. Partial bindings for rust are available as well.
@@ -52,6 +57,9 @@ Support for additional languages may be added in the future.
 * `isea9r`
 * `ivea3h`
 * `ivea9r`
+* `rtea3h`
+* `rtea9r`
+* `rhealpix` (aperture 9)
 
 ### Commands
 
