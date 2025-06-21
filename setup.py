@@ -14,7 +14,7 @@ from distutils.command.build_ext import build_ext
 #from wheel.bdist_wheel import bdist_wheel
 from os import path
 
-pkg_version = '0.0.2'
+pkg_version = '0.0.3'
 
 env = os.environ.copy()
 
@@ -229,7 +229,7 @@ setup(
     version=pkg_version,
     cffi_modules=cffi_modules,
     setup_requires=['setuptools', 'ecdev', 'cffi >= 1.0.0'],
-    install_requires=['ecrt >= 0.0.2', 'cffi >= 1.0.0'],
+    install_requires=['ecrt >= 0.0.3', 'cffi >= 1.0.0'],
     packages=packages,
     package_dir=package_dir,
     package_data=package_data,
