@@ -11,7 +11,8 @@ jobs:
         # os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-latest]
         # os: [ubuntu-latest]
         # os: [windows-2019] #latest]
-        os: [ubuntu-latest, windows-2019]
+        # os: [ubuntu-latest, windows-2019]
+        os: [ubuntu-24.04-arm]
 
     steps:
       - uses: actions/checkout@v4
