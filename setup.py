@@ -14,7 +14,7 @@ from distutils.command.build_ext import build_ext
 #from wheel.bdist_wheel import bdist_wheel
 from os import path
 
-pkg_version = '0.0.3'
+pkg_version = '0.0.4'
 
 env = os.environ.copy()
 
@@ -137,7 +137,7 @@ def prepare_package_dir(src_files, dest_dir):
 def build_package():
    try:
       ecdev_location = os.path.join(pkg_resources.get_distribution("ecdev").location, 'ecdev')
-      sdkOption = 'EC_SDK_SRC=' + ecdev_location
+      sdkOption = 'EC_SDK_SRC=' + ecdev_location.replace('\\', '/')
 
       binsPath = os.path.join(ecdev_location, 'bin', '')
       libsPath = os.path.join(ecdev_location, dll_dir, '')
@@ -146,13 +146,17 @@ def build_package():
          libsPath = libsPath.replace(os.sep, '/')
       binsOption = 'EC_BINS=' + binsPath
       ldFlags = 'LDFLAGS=-L' + libsPath
-      set_library_path(env, os.path.join(ecdev_location, 'lib'))
+      set_library_path(env, os.path.join(ecdev_location, 'bin' if platform_str == 'win32' else 'lib'))
       if not os.path.exists(artifacts_dir):
          make_and_args = [make_cmd, f'-j{cpu_count}', 'SKIP_SONAME=y', 'ENABLE_PYTHON_RPATHS=y', 'DISABLED_STATIC_BUILDS=y', sdkOption, binsOption, ldFlags]
          if cc_override is not None:
             make_and_args.extend(cc_override)
          subprocess.check_call(make_and_args, env=env, cwd=dggal_dir)
          #subprocess.check_call([make_cmd, f'-j{cpu_count}', 'SKIP_SONAME=y', 'ENABLE_PYTHON_RPATHS=y', 'DISABLED_STATIC_BUILDS=y', sdkOption, binsOption, ldFlags], env=env, cwd=dggal_c_dir)
+
+         set_library_path(env, lib_dir)
+         subprocess.check_call([make_cmd, 'test', 'DISABLED_STATIC_BUILDS=y', sdkOption, binsOption, ldFlags], env=env, cwd=dggal_dir)
+
          prepare_package_dir([
             (os.path.join(lib_dir, dll_prefix + 'dggal' + dll_ext), os.path.join(dll_dir, dll_prefix + 'dggal' + dll_ext)),
             #(os.path.join(lib_dir, dll_prefix + 'dggal_c' + dll_ext), os.path.join(dll_dir, dll_prefix + 'dggal_c' + dll_ext)),
@@ -228,8 +232,8 @@ setup(
     name='dggal',
     version=pkg_version,
     cffi_modules=cffi_modules,
-    setup_requires=['setuptools', 'ecdev', 'cffi >= 1.0.0'],
-    install_requires=['ecrt >= 0.0.3', 'cffi >= 1.0.0'],
+    setup_requires=['setuptools', 'ecdev >= 0.0.4', 'cffi >= 1.0.0'],
+    install_requires=['ecrt >= 0.0.4', 'cffi >= 1.0.0'],
     packages=packages,
     package_dir=package_dir,
     package_data=package_data,
@@ -252,6 +256,7 @@ setup(
          'Intended Audience :: Science/Research',
          'Operating System :: Microsoft :: Windows',
          'Operating System :: POSIX :: Linux',
+         'Operating System :: MacOS',
          'Programming Language :: Other',
          'Programming Language :: Python :: 3',
          'Topic :: Software Development :: Libraries',
