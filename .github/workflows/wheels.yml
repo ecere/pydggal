@@ -11,7 +11,7 @@ jobs:
         # os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-latest]
         # os: [ubuntu-latest]
         # os: [windows-2019] #latest]
-        os: [ubuntu-latest, windows-2019]
+        os: [ubuntu-latest, windows-2019, ubuntu-24.04-arm]
 
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
             # 32-bit builds on Windows are not supported because the MinGW-w64 does not have multilib enabled
             # musllinux builds do not currently work
             # There seems to be setuptools-related issues with 3.6 and 3.7 CPython builds
-            CIBW_SKIP: "cp36-* cp37-* *-musllinux* *-win32 pp*-win*"
+            CIBW_SKIP: "cp36-* cp37-* *-win32 pp*-win*"
             # This ensures WIN_SHELL_COMMANDS does not get defined on Windows in crossplatform.mk, which breaks deep directory creations
             # since commands are executed in a UNIX-like shell expecting 'mkdir -p'
             CIBW_ENVIRONMENT: 'MSYSCON=y PIP_FIND_LINKS="https://pypi.org/simple/ecrt https://pypi.org/simple/ecdev"'
