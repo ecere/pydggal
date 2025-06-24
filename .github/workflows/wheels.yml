@@ -11,10 +11,17 @@ jobs:
         # os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-latest]
         # os: [ubuntu-latest]
         # os: [windows-2019] #latest]
-        os: [ubuntu-latest, windows-2019, ubuntu-24.04-arm]
+        # os: [macos-latest]
+        os: [ubuntu-latest, windows-2019, ubuntu-24.04-arm, macos-13, macos-latest]
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install bootstrap Python (macOS only)
+        if: runner.os == 'macOS'
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
 
       # Apply patch only on Windows
       - name: Apply header patch on Windows
@@ -46,10 +53,27 @@ jobs:
             CIBW_SKIP: "cp36-* cp37-* *-win32 pp*-win*"
             # This ensures WIN_SHELL_COMMANDS does not get defined on Windows in crossplatform.mk, which breaks deep directory creations
             # since commands are executed in a UNIX-like shell expecting 'mkdir -p'
-            CIBW_ENVIRONMENT: 'MSYSCON=y PIP_FIND_LINKS="https://pypi.org/simple/ecrt https://pypi.org/simple/ecdev"'
+            CIBW_ENVIRONMENT: 'MSYSCON=y PIP_FIND_LINKS="https://test.pypi.org/simple/ecrt https://test.pypi.org/simple/ecdev"'
             CIBW_BUILD_VERBOSITY: 1
             CIBW_REPAIR_WHEEL_COMMAND_LINUX: 'auditwheel repair -w {dest_dir} {wheel} --exclude libecrt.so'
+            # CIBW_REPAIR_WHEEL_COMMAND_MACOS: 'delocate-wheel -w {dest_dir} -v {wheel}'
+            CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
+              sh -c '
+                set -e
 
+                TMP_DIR=$(mktemp -d);
+                unzip -q {wheel} -d "$TMP_DIR";
+
+                otool -L "$TMP_DIR"/dggal/lib/libdggal.dylib;
+                otool -l "$TMP_DIR"/dggal/lib/libdggal.dylib;
+
+                otool -L "$TMP_DIR"/dggal/bin/dgg;
+                otool -l "$TMP_DIR"/dggal/bin/dgg;
+
+                rm -r "$TMP_DIR"
+
+                cp {wheel} {dest_dir}
+              '
 
         #   CIBW_SOME_OPTION: value
         #   CIBW_BEFORE_BUILD: |
