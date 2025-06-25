@@ -148,7 +148,7 @@ def build_package():
       ldFlags = 'LDFLAGS=-L' + libsPath
       set_library_path(env, os.path.join(ecdev_location, 'lib'))
       if not os.path.exists(artifacts_dir):
-         make_and_args = [make_cmd, f'-j{cpu_count}', 'SKIP_SONAME=y', 'ENABLE_PYTHON_RPATHS=y', 'DISABLED_STATIC_BUILDS=y', sdkOption, binsOption, ldFlags]
+         make_and_args = [make_cmd, f'-j{cpu_count}', 'SKIP_SONAME=y', 'ENABLE_PYTHON_RPATHS=y', sdkOption, binsOption, ldFlags] #'DISABLED_STATIC_BUILDS=y', sdkOption, binsOption, ldFlags]
          if cc_override is not None:
             make_and_args.extend(cc_override)
          subprocess.check_call(make_and_args, env=env, cwd=dggal_dir)
