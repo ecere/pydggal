@@ -54,7 +54,7 @@ jobs:
             CIBW_SKIP: "cp36-* cp37-* *-win32 pp*-win*"
             # This ensures WIN_SHELL_COMMANDS does not get defined on Windows in crossplatform.mk, which breaks deep directory creations
             # since commands are executed in a UNIX-like shell expecting 'mkdir -p'
-            CIBW_ENVIRONMENT: 'MSYSCON=y PIP_FIND_LINKS="https://pypi.org/simple/ecrt https://pypi.org/simple/ecdev"'
+            CIBW_ENVIRONMENT: 'MSYSCON=y PIP_FIND_LINKS="https://test.pypi.org/simple/ecrt https://test.pypi.org/simple/ecdev"'
             CIBW_BUILD_VERBOSITY: 1
             CIBW_REPAIR_WHEEL_COMMAND_LINUX: 'auditwheel repair -w {dest_dir} {wheel} --exclude libecrt.so'
             # CIBW_REPAIR_WHEEL_COMMAND_MACOS: 'delocate-wheel -w {dest_dir} -v {wheel}'
