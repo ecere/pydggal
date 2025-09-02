@@ -14,7 +14,7 @@ from distutils.command.build_ext import build_ext
 #from wheel.bdist_wheel import bdist_wheel
 from os import path
 
-pkg_version = '0.0.4'
+pkg_version = '0.0.5'
 
 env = os.environ.copy()
 
