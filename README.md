@@ -1,4 +1,5 @@
-[![DGGAL docs](https://img.shields.io/badge/docs-API_documentation-green.svg)](https://dggal.org/docs/html/dggal/Classes/DGGRS.html)<br>
+[![DGGAL docs](https://img.shields.io/badge/docs-API_documentation-green.svg)](https://dggal.org/docs/html/dggal/Classes/DGGRS.html)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/dggal?period=total&units=INTERNATIONAL_SYSTEM&left_color=gray&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/dggal)
 
 # DGGAL, the Discrete Global Grid Abstraction Library
 
@@ -15,6 +16,18 @@ Source: https://github.com/ecere/dggal
 
 Python packaging: https://github.com/ecere/pydggal
 
+## DGGAL integration in other software
+
+DGGAL is already being integrated in several DGGS-enabled software, notably:
+
+- [Vgrid plugin for QGIS](https://plugins.qgis.org/plugins/vgridtools/) and [Vgrid DGGS](https://vgrid.gishub.vn/notebooks/08_dggal/),
+- FME Community Modules: [DGGS Indexer](https://community.safe.com/fme-hub-alerts-55/dggsindexer-38685), [DGGS Relator](https://community.safe.com/fme-hub-alerts-55/dggsrelator-38765),
+[DGGS-JSON Decoder](https://community.safe.com/fme-hub-alerts-55/dggsjsondecoder-387740), and [DGGS-JSON Encoder](https://community.safe.com/fme-hub-alerts-55/dggsjsonencoder-38787),
+- [a5geo](https://a5geo.org/) (adapting the DGGAL code for the DSEA / IVEA equal-area projection),
+- [pydggsapi](https://github.com/LandscapeGeoinformatics/pydggsapi/tree/dggal),
+- [GeoPlegma](https://github.com/GeoPlegma),
+- [Ecere](https://ecere.ca)'s [GNOSIS Software Development Kit](http://gnosis.earth/) and [GNOSIS Map Server](https://maps.gnosis.earth).
+
 ## Supported Discrete Global Grid Reference Systems
 
 DGGAL currently supports all nine DGGRSs described in [OGC API - DGGS Annex B](https://docs.ogc.org/DRAFTS/21-038r1.html#annex-dggrs-def), as well as additional DGGRSs:
@@ -26,10 +39,15 @@ DGGAL currently supports all nine DGGRSs described in [OGC API - DGGS Annex B](h
 ### Equal-Area DGGRSs based on Icosahedral Projections (aperture 3 and 7 Hexagonal, aperture 4 and 9 Axis-Aligned Rhombic)
 
 All of these Icosahedral DGGRSs achieve equal-area on the WGS84 ellipsoid, and are oriented with a first vertex of the icosahedron positioned at
-authalic latitude of _atan(φ)_ (where φ is the golden ratio), and longitude 11.20°E, with second vertex due North, resulting in only one
+authalic latitude of _arctan(φ)_ (where φ is the golden ratio), and longitude 11.20°E, with second vertex due North, resulting in only one
 vertex / pentagon on land. Each of the 12 pentagons occupies 5/6th the area of a hexagon at the same refinement level.
 
-_WARNING: The aperture 7 hexagonal grids are still experimental; sub-zones are not yet implemented for them._
+The aperture 7 hexagonal grids and indexing should now be quite stable, and support for listing and resolving sub-zones is implemented for hexagonal ancestral zones.
+
+**_Current limitation_**: _Support for listing and indexing sub-zones of **7H pentagonal** ancestral zones (all 12 level 0 zones and their centroid descendants) is not currently supported, but will be added in an upcoming version.
+In practice, the current lack of sub-zone support for pentagonal ancestral zones is only an issue for working with global low-resolution data,
+or at high resolution within close proximity to the 12 icosahedron vertices (within the pentagonal zones).
+All but one pentagon on land are avoided with a reference zone starting from 7H refinement level 9 (~1.26 km² area zones)._
 
 #### Icosahedral Snyder Equal Area (ISEA) projection
 
@@ -39,6 +57,13 @@ _WARNING: The aperture 7 hexagonal grids are still experimental; sub-zones are n
 * [ISEA9R](https://docs.ogc.org/DRAFTS/21-038r1.html#isea9r-dggrs): An equal area rhombic grid with a refinement ratio of 9 defined in the ISEA projection transformed into a 5x6 Cartesian space resulting in axis-aligned square zones
 * [ISEA3H](https://docs.ogc.org/DRAFTS/21-038r1.html#isea3h-dggrs): An equal area hexagonal grid with a refinement ratio of 3 defined in the ISEA projection
 * [ISEA7H](https://docs.ogc.org/DRAFTS/21-038r1.html#isea7h-dggrs): An equal area hexagonal grid with a refinement ratio of 7 defined in the ISEA projection
+* **ISEA7H_Z7**: Same Discrete Global Grid Hierarchy (DGGH) and sub-zone order as ISEA7H, but using the Z7 indexing for interoperability with [DGGRID](https://github.com/sahrk/DGGRID) and [IGEO7](https://agile-giss.copernicus.org/articles/6/32/2025/).
+
+**NOTE:** The DGGRID / IGEO7 interoperability of ISEA7H_Z7 relies on converting the authalic latitudes produced by DGGRID to geodetic latitudes to reference them to the WGS84 ellipsoid,
+and using the orientation which can be specified in DGGRID with `dggs_vert0_lon 11.20`, `dggs_vert0_lat 58.282525588538994675786` and `dggs_vert0_azimuth 0.0`.
+Efficient conversion from authalic latitude to geodetic latitudes is described by [Charles Karney's "On auxiliary latitudes"](https://arxiv.org/pdf/2212.05818)
+and can be performed using [Geographiclib](https://geographiclib.sourceforge.io/doc/library.html) or with the `authalicSetup()`, `latGeodeticToAuthalic()` and `latAuthalicToGeodetic()`
+[functions from DGGAL](https://github.com/ecere/dggal/blob/eC-core/src/projections/authalic.ec).
 
 #### Icosahedral Vertex-oriented great circle Equal Area (IVEA) projection
 
@@ -48,6 +73,7 @@ _WARNING: The aperture 7 hexagonal grids are still experimental; sub-zones are n
 * [IVEA9R](https://docs.ogc.org/DRAFTS/21-038r1.html#ivea9r-dggrs): An equal area rhombic grid with a refinement ratio of 9 defined in the IVEA projection transformed into a 5x6 Cartesian space resulting in axis-aligned square zones, using the same global indexing and sub-zone ordering as for ISEA9R
 * [IVEA3H](https://docs.ogc.org/DRAFTS/21-038r1.html#ivea3h-dggrs): An equal area hexagonal grid with a refinement ratio of 3 defined in the IVEA projection, using the same global indexing and sub-zone ordering as for ISEA3H
 * [IVEA7H](https://docs.ogc.org/DRAFTS/21-038r1.html#ivea7h-dggrs): An equal area hexagonal grid with a refinement ratio of 7 defined in the IVEA projection, using the same global indexing and sub-zone ordering as for ISEA7H
+* **IVEA7H_Z7**: Same DGGH and sub-zone order as IVEA7H, but using same Z7 indexing as for ISEA7H_Z7.
 
 **NOTE:** This projection is superior to ISEA and RT(S)EA at avoiding perceptible cusps, resulting in more compact/regular zones.
 
@@ -62,6 +88,7 @@ _WARNING: The aperture 7 hexagonal grids are still experimental; sub-zones are n
 * **RTEA9R**: An equal area rhombic grid with a refinement ratio of 9 defined in the RTEA projection transformed into a 5x6 Cartesian space resulting in axis-aligned square zones, using the same global indexing and sub-zone ordering as for ISEA9R
 * **RTEA3H**: An equal area hexagonal grid with a refinement ratio of 3 defined in the RTEA projection using the same global indexing and sub-zone ordering as for ISEA3H
 * **RTEA7H**: An equal area hexagonal grid with a refinement ratio of 7 defined in the RTEA projection using the same global indexing and sub-zone ordering as for ISEA7H
+* **RTEA7H_Z7**: Same DGGH and sub-zone order as RTEA7H, but using same Z7 indexing as for ISEA7H_Z7.
 
 ### Axis-aligned and Equal-Area DGGRSs based on HEALPix Projection
 
@@ -83,7 +110,7 @@ The DGGAL library also allows to resolve a sub-zone index at a particular depth 
 ## Language bindings
 
 While the library is written in the [eC programming language](https://ec-lang.org), object-oriented bindings for C, C++ and Python generated using the
-Ecere SDK's [`bgen` tool](https://github.com/ecere/bgen) are provided. Bindings for Rust are available as well.
+Ecere SDK's [`bgen` tool](https://github.com/ecere/bgen) are provided. Bindings for Rust, Java and JavaScript (for WebAssembly build) are available as well.
 Support for additional languages may be added in the future.
 
 ## `dgg` tool
@@ -95,9 +122,9 @@ Support for additional languages may be added in the future.
 
 ### Supported DGGRSs
 * `gnosis` (Global Grid)
-* `isea4r`, `isea9r`, `isea3h`, `isea7h`
-* `ivea4r`, `ivea9r`, `ivea3h`, `ivea7h`
-* `rtea4r`, `rtea9r`, `rtea3h`, `rtea7h`
+* `isea4r`, `isea9r`, `isea3h`, `isea7h`, `isea7h_z7`
+* `ivea4r`, `ivea9r`, `ivea3h`, `ivea7h`, `ivea7h_z7`
+* `rtea4r`, `rtea9r`, `rtea3h`, `rtea7h`, `rtea7h_z7`
 * `rhealpix` (aperture 9, 50° E)
 * `healpix` (aperture 4, Nφ/H = 4, Nθ/K = 3)
 
