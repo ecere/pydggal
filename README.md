@@ -63,7 +63,7 @@ All but one pentagon on land are avoided with a reference zone starting from 7H 
 and using the orientation which can be specified in DGGRID with `dggs_vert0_lon 11.20`, `dggs_vert0_lat 58.282525588538994675786` and `dggs_vert0_azimuth 0.0`.
 Efficient conversion from authalic latitude to geodetic latitudes is described by [Charles Karney's "On auxiliary latitudes"](https://arxiv.org/pdf/2212.05818)
 and can be performed using [Geographiclib](https://geographiclib.sourceforge.io/doc/library.html) or with the `authalicSetup()`, `latGeodeticToAuthalic()` and `latAuthalicToGeodetic()`
-[functions from DGGAL](https://github.com/ecere/dggal/blob/eC-core/src/projections/authalic.ec).
+[functions from DGGAL](https://github.com/ecere/dggal/blob/main/src/projections/authalic.ec).
 
 #### Icosahedral Vertex-oriented great circle Equal Area (IVEA) projection
 
