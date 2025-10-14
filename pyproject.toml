@@ -1,0 +1,3 @@
+[build-system]
+requires = ["setuptools", "wheel", "cffi>=1.0.0", "ecdev>=0.0.5post1", "importlib_metadata; python_version<'3.8'"]
+build-backend = "setuptools.build_meta"

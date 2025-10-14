@@ -1,20 +1,35 @@
 from setuptools import setup, Extension
 import multiprocessing
-from setuptools.command.build import build
+
+try:
+    from setuptools.command.build import build # Python 3.7+
+except ImportError:
+    from distutils.command.build import build  # Fallback for older Python (<3.7)
+
 from setuptools.command.egg_info import egg_info
 import subprocess
 import os
 import sys
 import shutil
 import sysconfig
-import pkg_resources
+# pkg_resources is deprecated in setuptools >= 81
+# import pkg_resources
+try:
+   from importlib.metadata import distribution # Python 3.8+
+except ImportError:
+   from importlib_metadata import distribution # Fallback for older Python (<3.8)
 import platform
 import distutils.ccompiler
 from distutils.command.build_ext import build_ext
 #from wheel.bdist_wheel import bdist_wheel
 from os import path
 
-pkg_version = '0.0.5'
+# Work around for CPython 3.6 on Windows
+if sys.platform.startswith("win") and sys.version_info[:2] == (3, 6):
+   import distutils.cygwinccompiler
+   distutils.cygwinccompiler.get_msvcr = lambda: [] # ["msvcr140"] -- we're building with MinGW-w64
+
+pkg_version = '0.0.6'
 
 env = os.environ.copy()
 
@@ -100,7 +115,8 @@ with open(os.path.join(rwd, 'README.md'), encoding='u8') as f:
    long_description = f.read()
 
 cpu_count = multiprocessing.cpu_count()
-dggal_dir = os.path.join(os.path.dirname(__file__), 'dggal')
+setup_py_dir = os.path.abspath(os.path.dirname(__file__))
+dggal_dir = os.path.join(setup_py_dir, 'dggal') # os.path.dirname(__file__) doesn't work on Python 3.6 / macOS
 dggal_c_dir = os.path.join(os.path.dirname(__file__), 'dggal', 'bindings', 'c')
 dggal_py_dir = os.path.join(os.path.dirname(__file__), 'dggal', 'bindings', 'py')
 platform_str = 'win32' if sys.platform.startswith('win') else ('apple' if sys.platform.startswith('darwin') else 'linux')
@@ -136,7 +152,9 @@ def prepare_package_dir(src_files, dest_dir):
 
 def build_package():
    try:
-      ecdev_location = os.path.join(pkg_resources.get_distribution("ecdev").location, 'ecdev')
+      # pkg_resources is deprecated in setuptools >= 81
+      # ecdev_location = os.path.join(pkg_resources.get_distribution("ecdev").location, 'ecdev')
+      ecdev_location = os.path.join(distribution("ecdev").locate_file(""), "ecdev")
       sdkOption = 'EC_SDK_SRC=' + ecdev_location.replace('\\', '/')
 
       binsPath = os.path.join(ecdev_location, 'bin', '')
@@ -155,6 +173,7 @@ def build_package():
          #subprocess.check_call([make_cmd, f'-j{cpu_count}', 'SKIP_SONAME=y', 'ENABLE_PYTHON_RPATHS=y', 'DISABLED_STATIC_BUILDS=y', sdkOption, binsOption, ldFlags], env=env, cwd=dggal_c_dir)
 
          set_library_path(env, lib_dir)
+
          subprocess.check_call([make_cmd, 'test', 'DISABLED_STATIC_BUILDS=y', sdkOption, binsOption, ldFlags], env=env, cwd=dggal_dir)
 
          prepare_package_dir([
@@ -170,6 +189,7 @@ def build_package():
             (os.path.join(dggal_dir, 'bindings_examples', 'py', 'togeo.py'), os.path.join('examples', 'togeo.py')),
             (os.path.join(dggal_dir, 'bindings_examples', 'py', 'togeo_json.py'), os.path.join('examples', 'togeo_json.py')),
             (os.path.join(dggal_dir, 'bindings_examples', 'py', 'togeo_text.py'), os.path.join('examples', 'togeo_text.py')),
+            (os.path.join(dggal_dir, 'bindings_examples', 'py', 'authalic.py'), os.path.join('examples', 'authalic.py')),
          ], artifacts_dir)
    except subprocess.CalledProcessError as e:
       print(f"Error during make: {e}")
@@ -213,7 +233,7 @@ else:
       'dggal': [ 'dggal.py' ],
       'dggal.bin': ['dgg' + exe_ext, 'dgg_wrapper.py'],
       #'dggal.lib': ['libdggalStatic.a'],
-      'dggal.examples': ['geom.py', 'info.py', 'list.py', 'togeo.py', 'togeo_json.py', 'togeo_text.py'],
+      'dggal.examples': ['geom.py', 'info.py', 'list.py', 'togeo.py', 'togeo_json.py', 'togeo_text.py', 'authalic.py'],
    }
    if platform_str == 'win32':
       package_data['dggal.bin'].append(dll_prefix + 'dggal' + dll_ext)
@@ -232,7 +252,8 @@ setup(
     name='dggal',
     version=pkg_version,
     cffi_modules=cffi_modules,
-    setup_requires=['setuptools', 'ecdev >= 0.0.5post1', 'cffi >= 1.0.0'],
+    # setup_requires is deprecated -- build dependencies must now be specified in pyproject.toml
+    #setup_requires=['setuptools', 'ecdev >= 0.0.5post1', 'cffi >= 1.0.0'],
     install_requires=['ecrt >= 0.0.5', 'cffi >= 1.0.0'],
     packages=packages,
     package_dir=package_dir,

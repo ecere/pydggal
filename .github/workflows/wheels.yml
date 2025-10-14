@@ -13,7 +13,7 @@ jobs:
         # os: [windows-2019] #latest]
         # os: [macos-latest]
         # os: [macos-13]
-        os: [ubuntu-latest, windows-2022, ubuntu-24.04-arm, macos-13, macos-latest]
+        os: [ubuntu-latest, windows-2022, ubuntu-24.04-arm, macos-15-intel, macos-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -22,7 +22,7 @@ jobs:
         if: runner.os == 'macOS'
         uses: actions/setup-python@v4
         with:
-          python-version: '3.8'
+          python-version: '3.11'
 
       # Apply patch only on Windows
       - name: Apply header patch on Windows
@@ -31,12 +31,14 @@ jobs:
           # Patch MinGW-w64 header files currently causing troubles for eC compiler (C99 .namedmembers assignments in AVX files, and re-defnitions of function type typedef in winbase.h)
           #git apply --directory=mingw64 '${{ github.workspace }}\patches\mingw64-gcc-12.2.0-patches.patch'
           cd C:\
-          copy ${{ github.workspace }}\patches\lib\gcc\x86_64-w64-mingw32\12.2.0\include\avx512fp16intrin.h C:\mingw64\lib\gcc\x86_64-w64-mingw32\12.2.0\include\avx512fp16intrin.h
-          copy ${{ github.workspace }}\patches\lib\gcc\x86_64-w64-mingw32\12.2.0\include\avx512fp16vlintrin.h C:\mingw64\lib\gcc\x86_64-w64-mingw32\12.2.0\include\avx512fp16vlintrin.h
+          copy ${{ github.workspace }}\patches\lib\gcc\x86_64-w64-mingw32\12.2.0\include\avx512fp16intrin.h C:\mingw64\lib\gcc\x86_64-w64-mingw32\14.2.0\include\avx512fp16intrin.h
+          copy ${{ github.workspace }}\patches\lib\gcc\x86_64-w64-mingw32\12.2.0\include\avx512fp16vlintrin.h C:\mingw64\lib\gcc\x86_64-w64-mingw32\14.2.0\include\avx512fp16vlintrin.h
           copy ${{ github.workspace }}\patches\x86_64-w64-mingw32\include\winbase.h C:\mingw64\x86_64-w64-mingw32\include\winbase.h
 
       # Used to host cibuildwheel
       - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
       - name: Initialize submodules
         run: git submodule update --init --recursive
@@ -47,11 +49,10 @@ jobs:
       - name: Build wheels
         run: python3 -m cibuildwheel --output-dir wheelhouse
         env:
+            CIBW_ENABLE: "pypy"
             # Windows PyPy 3.8 build is currently failing due to https://github.com/python-cffi/cffi/issues/170
             # 32-bit builds on Windows are not supported because the MinGW-w64 does not have multilib enabled
-            # musllinux builds do not currently work
-            # There seems to be setuptools-related issues with 3.6 and 3.7 CPython builds
-            CIBW_SKIP: "cp36-* cp37-* *-win32 pp*-win*"
+            CIBW_SKIP: "*-win32 pp*-win*"
             # This ensures WIN_SHELL_COMMANDS does not get defined on Windows in crossplatform.mk, which breaks deep directory creations
             # since commands are executed in a UNIX-like shell expecting 'mkdir -p'
             CIBW_ENVIRONMENT: 'MSYSCON=y PIP_FIND_LINKS="https://pypi.org/simple/ecrt https://pypi.org/simple/ecdev"'
