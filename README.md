@@ -91,6 +91,10 @@ and can be performed using [Geographiclib](https://geographiclib.sourceforge.io/
 ([HEALPix projection](https://arxiv.org/pdf/astro-ph/0409513))
 
 * [HEALPix](https://docs.ogc.org/is/21-038r1/21-038r1.html#HEALPix-dggrs): An equal area and axis-aligned grid with square zones topology and a refinement ratio of 4 defined in the HEALPix projection, using configuration Nφ/H = 4, Nθ/K = 3 (same as default [PROJ implementation](https://proj.org/en/stable/operations/projections/healpix.html)), the new indexing described in OGC API - DGGS Annex B, and scanline-based sub-zone ordering
+* **HEALPix_NUNIQ**: Same DGGH as [HEALPix](https://docs.ogc.org/is/21-038r1/21-038r1.html#HEALPix-dggrs), but using the NUNIQ zone identifiers,
+calculated as uniq = 4 * (4^order) + npix (where order is equal to the refinement level, and npix is the level-specific index as defined by [https://arxiv.org/pdf/astro-ph/0409513](https://arxiv.org/pdf/astro-ph/0409513)),
+as described in [https://doi.org/10.1051/0004-6361/201526549](https://doi.org/10.1051/0004-6361/201526549) and [https://arxiv.org/html/2111.11240v1](https://arxiv.org/html/2111.11240v1) (see Figure 4c);
+the sub-zone ordering is based on the Z-curve (ascending order of the uniq integers)
 * [rHEALPix](https://docs.ogc.org/is/21-038r1/21-038r1.html#rHEALPix-dggrs): An equal area and axis-aligned grid with square zones topology and a refinement ratio of 9 defined in the rHEALPix projection using 50° E prime meridian (equivalent to [PROJ implementation](https://proj.org/en/stable/operations/projections/rhealpix.html) with parameters `+proj=rhealpix +lon_0=50 +ellps=WGS84`), the [original hierarchical indexing](https://iopscience.iop.org/article/10.1088/1755-1315/34/1/012012), and scanline-based sub-zone ordering
 
 ## libDGGAL API Documentation
@@ -123,6 +127,7 @@ Support for additional languages may be added in the future.
 * `rtea4r`, `rtea9r`, `rtea3h`, `rtea7h`, `rtea7h_z7`
 * `rhealpix` (aperture 9, 50° E)
 * `healpix` (aperture 4, Nφ/H = 4, Nθ/K = 3)
+* `healpix_nuniq` (aperture 4, Nφ/H = 4, Nθ/K = 3)
 
 ### Commands
 
@@ -172,7 +177,7 @@ Support for additional languages may be added in the future.
 
 **-crs** <_crs_>
 - Select an output coordinate reference system, one of:
-EPSG:4326, OGC:CRS84, 5x6, ico (icosahedron net), rhp (rHEALPix), hpx (HEALPix)
+EPSG:4326, OGC:CRS84, 5x6, ico (icosahedron net), rhp (rHEALPix), hpx (HEALPix, HEALPix_NUNIQ)
 
 **-depth** <_relative depth_>
 - For sub, specify relative depth
