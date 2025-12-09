@@ -29,7 +29,7 @@ if sys.platform.startswith("win") and sys.version_info[:2] == (3, 6):
    import distutils.cygwinccompiler
    distutils.cygwinccompiler.get_msvcr = lambda: [] # ["msvcr140"] -- we're building with MinGW-w64
 
-pkg_version = '0.0.6'
+pkg_version = '0.0.7rc1'
 
 env = os.environ.copy()
 
@@ -153,8 +153,14 @@ def prepare_package_dir(src_files, dest_dir):
 def build_package():
    try:
       # pkg_resources is deprecated in setuptools >= 81
-      # ecdev_location = os.path.join(pkg_resources.get_distribution("ecdev").location, 'ecdev')
-      ecdev_location = os.path.join(distribution("ecdev").locate_file(""), "ecdev")
+
+      # This works around messy cp38 / macos-latest / arm64 build which is confused with x86_64
+      arm64_packages = os.environ.get("ARM64_PACKAGES")
+      if arm64_packages:
+         ecdev_location = os.path.join(arm64_packages, "ecdev")
+      else:
+         # ecdev_location = os.path.join(pkg_resources.get_distribution("ecdev").location, 'ecdev')
+         ecdev_location = os.path.join(distribution("ecdev").locate_file(""), "ecdev")
       sdkOption = 'EC_SDK_SRC=' + ecdev_location.replace('\\', '/')
 
       binsPath = os.path.join(ecdev_location, 'bin', '')
@@ -166,7 +172,14 @@ def build_package():
       ldFlags = 'LDFLAGS=-L' + libsPath
       set_library_path(env, os.path.join(ecdev_location, 'bin' if platform_str == 'win32' else 'lib'))
       if not os.path.exists(artifacts_dir):
+         archflags = env.get("ARCHFLAGS", None)
+         if archflags is not None:
+            # This will add arm64 architecture flags for macos-latest
+            ldFlags += ' ' + archflags
          make_and_args = [make_cmd, f'-j{cpu_count}', 'SKIP_SONAME=y', 'ENABLE_PYTHON_RPATHS=y', 'DISABLED_STATIC_BUILDS=y', sdkOption, binsOption, ldFlags]
+         if archflags is not None:
+            # This will add arm64 architecture flags for macos-latest
+            make_and_args.append('CFLAGS=' + archflags)
          if cc_override is not None:
             make_and_args.extend(cc_override)
          subprocess.check_call(make_and_args, env=env, cwd=dggal_dir)
@@ -174,7 +187,14 @@ def build_package():
 
          set_library_path(env, lib_dir)
 
-         subprocess.check_call([make_cmd, 'test', 'DISABLED_STATIC_BUILDS=y', sdkOption, binsOption, ldFlags], env=env, cwd=dggal_dir)
+         make_test_and_args = [make_cmd, 'test', 'DISABLED_STATIC_BUILDS=y', sdkOption, binsOption, ldFlags]
+         if archflags is not None:
+            # This will add arm64 architecture flags for macos-latest
+            make_test_and_args.append('CFLAGS=' + archflags)
+         if cc_override is not None:
+            make_test_and_args.extend(cc_override)
+
+         subprocess.check_call(make_test_and_args, env=env, cwd=dggal_dir)
 
          prepare_package_dir([
             (os.path.join(lib_dir, dll_prefix + 'dggal' + dll_ext), os.path.join(dll_dir, dll_prefix + 'dggal' + dll_ext)),
@@ -186,7 +206,9 @@ def build_package():
             (os.path.join(os.path.dirname(__file__), 'dgg_wrapper.py'), os.path.join('bin', 'dgg_wrapper.py')),
             (os.path.join(dggal_dir, 'bindings_examples', 'py', 'geom.py'), os.path.join('examples', 'geom.py')),
             (os.path.join(dggal_dir, 'bindings_examples', 'py', 'info.py'), os.path.join('examples', 'info.py')),
+            (os.path.join(dggal_dir, 'bindings_examples', 'py', 'list.py'), os.path.join('examples', 'list.py')),
             (os.path.join(dggal_dir, 'bindings_examples', 'py', 'togeo.py'), os.path.join('examples', 'togeo.py')),
+            (os.path.join(dggal_dir, 'bindings_examples', 'py', 'togeo_shapely.py'), os.path.join('examples', 'togeo_shapely.py')),
             (os.path.join(dggal_dir, 'bindings_examples', 'py', 'togeo_json.py'), os.path.join('examples', 'togeo_json.py')),
             (os.path.join(dggal_dir, 'bindings_examples', 'py', 'togeo_text.py'), os.path.join('examples', 'togeo_text.py')),
             (os.path.join(dggal_dir, 'bindings_examples', 'py', 'authalic.py'), os.path.join('examples', 'authalic.py')),
@@ -254,7 +276,7 @@ setup(
     cffi_modules=cffi_modules,
     # setup_requires is deprecated -- build dependencies must now be specified in pyproject.toml
     #setup_requires=['setuptools', 'ecdev >= 0.0.5post1', 'cffi >= 1.0.0'],
-    install_requires=['ecrt >= 0.0.5', 'cffi >= 1.0.0'],
+    install_requires=['ecrt >= 0.0.7rc1', 'cffi >= 1.0.0'],
     packages=packages,
     package_dir=package_dir,
     package_data=package_data,
