@@ -2,11 +2,15 @@ name: Build
 
 on: [push, pull_request]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         # os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-latest]
         # os: [ubuntu-latest]
@@ -44,18 +48,24 @@ jobs:
         run: git submodule update --init --recursive
 
       - name: Install cibuildwheel
-        run: python3 -m pip install cibuildwheel==2.23.3
+        run: python3 -m pip install cibuildwheel #==2.23.3
 
+      - name: Set ARM64 path only on Apple Silicon
+        if: runner.os == 'macOS' && runner.arch == 'ARM64'
+        run: |
+          echo "ARM64_PACKAGES=${{ github.workspace }}/arm64_packages" >> $GITHUB_ENV
       - name: Build wheels
         run: python3 -m cibuildwheel --output-dir wheelhouse
         env:
-            CIBW_ENABLE: "pypy"
+            CIBW_ENABLE: "pypy pypy-eol"
             # Windows PyPy 3.8 build is currently failing due to https://github.com/python-cffi/cffi/issues/170
             # 32-bit builds on Windows are not supported because the MinGW-w64 does not have multilib enabled
-            CIBW_SKIP: "*-win32 pp*-win*"
+            CIBW_SKIP: "*-win32 pp*-win* cp*t-*"
             # This ensures WIN_SHELL_COMMANDS does not get defined on Windows in crossplatform.mk, which breaks deep directory creations
             # since commands are executed in a UNIX-like shell expecting 'mkdir -p'
-            CIBW_ENVIRONMENT: 'MSYSCON=y PIP_FIND_LINKS="https://pypi.org/simple/ecrt https://pypi.org/simple/ecdev"'
+            CIBW_ENVIRONMENT: 'MSYSCON=y PIP_FIND_LINKS="https://test.pypi.org/simple/ecrt https://test.pypi.org/simple/ecdev"'
+            # This manually installs the ARM64 ecdev dependency in $(ARM64_PACKAGES) since the macos-latest runner wrongly installs the x86_64 one
+            CIBW_BEFORE_BUILD_MACOS: "${{ runner.arch == 'ARM64' && format('python -m pip install \"ecdev>=0.0.7rc1\" --platform macosx_10_15_arm64 --only-binary=:all: --upgrade --target {0}/arm64_packages', github.workspace) || '' }}"
             CIBW_BUILD_VERBOSITY: 1
             CIBW_REPAIR_WHEEL_COMMAND_LINUX: 'auditwheel repair -w {dest_dir} {wheel} --exclude libecrt.so'
             # CIBW_REPAIR_WHEEL_COMMAND_MACOS: 'delocate-wheel -w {dest_dir} -v {wheel}'
